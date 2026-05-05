@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/routes.dart';
 import '../../data/driver_data.dart';
 import '../../models/driver_model.dart';
 import '../../config/app_theme.dart';
@@ -44,13 +45,9 @@ class _DriverScreenState extends State<DriverScreen> {
   }
 
   void _onAddDriver() {
-    // Navigate to add driver screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Add new driver'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primary,
-      ),
+    Navigator.pushNamed(
+      context,
+      AppRoutes.addDriver,
     );
   }
 

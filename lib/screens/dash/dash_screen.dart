@@ -158,13 +158,23 @@ class DashboardScreen extends StatelessWidget {
             IconButton(
               tooltip: 'Add Driver',
               icon: Icon(Icons.person_add,size: size.width*0.08,color: AppColors.active,),
-              onPressed: (){},
+              onPressed: (){
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.addDriver,
+                );
+              },
             ),
             SizedBox(width: size.width * 0.4,),
             IconButton(
               tooltip: 'Add Battery',
               icon: Icon(Icons.battery_saver_rounded,size: size.width*0.08,color: AppColors.active,),
-              onPressed: (){},
+              onPressed: (){
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.battery,
+                );
+              },
             ),
           ],
         ),
