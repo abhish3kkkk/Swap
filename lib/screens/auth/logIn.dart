@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../config/app_urls.dart';
 import '../../config/routes.dart'; // <-- import your theme
 
 class LoginScreen extends StatefulWidget {
@@ -60,14 +63,74 @@ class _LoginScreenState extends State<LoginScreen>
 
     setState(() => _isLoading = true);
 
-    await Future.delayed(const Duration(milliseconds: 1500));
-    //here we have to implement login logic in future
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.dashboard,
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(AppUrls.login),
+        body: {
+          "userid": _emailController.text.trim(),
+          "password": _passwordController.text.trim(),
+        },
+      );
 
-    if (mounted) setState(() => _isLoading = false);
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        if (data['status'] == true) {
+
+          // Login Success
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message']),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Optional: print user data
+          print(data['data']);
+
+          // Navigate to dashboard
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.dashboard,
+          );
+
+        } else {
+
+          // Invalid Credentials
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'] ?? 'Login Failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+
+      } else {
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Server Error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+    } catch (e) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+
+    } finally {
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -141,17 +204,23 @@ class _LoginScreenState extends State<LoginScreen>
 
                             _inputField(
                               controller: _emailController,
-                              hint: 'you@example.com',
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (v) {
+                              hint: 'abc',
+                              //keyboardType: TextInputType.emailAddress,
+                              validator: (v){
                                 if (v == null || v.isEmpty) {
                                   return 'Email is required';
                                 }
-                                if (!v.contains('@')) {
-                                  return 'Enter valid email';
-                                }
                                 return null;
-                              },
+                              }
+                              // validator: (v) {
+                              //   if (v == null || v.isEmpty) {
+                              //     return 'Email is required';
+                              //   }
+                              //   if (!v.contains('@')) {
+                              //     return 'Enter valid email';
+                              //   }
+                              //   return null;
+                              // },
                             ),
 
                             const SizedBox(height: 16),

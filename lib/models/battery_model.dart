@@ -1,25 +1,3 @@
-// class BatteryModel {
-//   final int id;
-//   final String batteryCode;
-//   final String status;
-//   final String mfd;
-//
-//   BatteryModel({
-//     required this.id,
-//     required this.batteryCode,
-//     required this.status,
-//     required this.mfd,
-//   });
-//
-//   factory BatteryModel.fromJson(Map<String, dynamic> json) {
-//     return BatteryModel(
-//       id: json['id'],
-//       batteryCode: json['battery_code'],
-//       status: json['status'],
-//       mfd: json['manufacturing_date'],
-//     );
-//   }
-// }
 class BatteryModel {
   final String id;
   final String serialNumber;
@@ -50,13 +28,33 @@ class BatteryModel {
     );
   }
 
+  // factory BatteryModel.fromJson(Map<String, dynamic> json) {
+  //   return BatteryModel(
+  //     id: json['id'] ?? '',
+  //     serialNumber: json['serial_number'] ?? '',
+  //     capacityMah: json['capacity_mah'] ?? 0,
+  //     healthPercent: json['health_percent'] ?? 0,
+  //     type: json['type'] ?? '',
+  //   );
+  // }
   factory BatteryModel.fromJson(Map<String, dynamic> json) {
     return BatteryModel(
-      id: json['id'] ?? '',
-      serialNumber: json['serial_number'] ?? '',
-      capacityMah: json['capacity_mah'] ?? 0,
-      healthPercent: json['health_percent'] ?? 0,
-      type: json['type'] ?? '',
+      id: json['id'].toString(),
+
+      serialNumber:
+      json['serial_number']?.toString() ?? '',
+
+      capacityMah: int.tryParse(
+        json['capacity_mah'].toString(),
+      ) ??
+          0,
+
+      healthPercent: int.tryParse(
+        json['health_percent'].toString(),
+      ) ??
+          100,
+
+      type: json['type']?.toString() ?? '',
     );
   }
 
