@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../config/routes.dart';
 import '../../data/driver_data.dart';
 import '../../models/driver_model.dart';
 import '../../config/app_theme.dart';
+import '../../service/qr/driver_qr.dart';
 import '../../widgets/driver_widget/driver_list.dart';
 import '../../widgets/driver_widget/driver_screen_header.dart';
 import '../../widgets/driver_widget/driver_search_bar.dart';
@@ -17,10 +20,14 @@ class DriverScreen extends StatefulWidget {
 }
 
 class _DriverScreenState extends State<DriverScreen> {
-  final List<DriverModel> _allDrivers = DriverData.mockDrivers;
+  //final List<DriverModel> _allDrivers = DriverData.mockDrivers;
 
   String _searchQuery = '';
   FilterOption _activeFilter = FilterOption.all;
+
+  List<DriverModel> _allDrivers = [];
+
+  bool isLoading = true;
 
   List<DriverModel> get _filteredDrivers {
     return _allDrivers.where((driver) {
@@ -51,8 +58,89 @@ class _DriverScreenState extends State<DriverScreen> {
     );
   }
 
+
+  Future<void> fetchDrivers() async {
+
+    try {
+
+      final response = await http.get(
+        Uri.parse(
+          "https://dynamic-futuretech.com/swap_app/apis/getDriver.php",
+        ),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (data["status"] == true) {
+
+        final List driversJson = data["data"];
+
+        _allDrivers = driversJson.map((json) {
+
+          return DriverModel(
+            id: int.parse(json["id"].toString()),
+            name: json["name"] ?? "",
+            phone: json["phone"] ?? "",
+            address: json["address"] ?? "",
+            vehicleNumber: json["vehical_number"] ?? "",
+            status: _mapIntToStatus(
+              int.parse(json["status"].toString()),
+            ),
+          );
+
+        }).toList();
+
+      }
+
+    } catch (e) {
+
+      debugPrint("Fetch Driver Error: $e");
+
+    } finally {
+
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  DriverStatus _mapIntToStatus(int status) {
+
+    switch (status) {
+
+      case 1:
+        return DriverStatus.active;
+
+      case 2:
+        return DriverStatus.idle;
+
+      case 0:
+      default:
+        return DriverStatus.offline;
+    }
+  }
+
+
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDrivers();
+  }
+
   @override
   Widget build(BuildContext context) {
+    //final filtered = _filteredDrivers;
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     final filtered = _filteredDrivers;
 
     return Scaffold(

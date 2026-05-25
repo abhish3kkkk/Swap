@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/driver_model.dart';
 import '../../config/app_theme.dart';
+import '../../service/qr/driver_qr.dart';
 import 'driver_avatar.dart';
 import 'status_pill.dart';
 import 'vehicle_tag.dart';
@@ -55,7 +56,17 @@ class DriverCard extends StatelessWidget {
                       const SizedBox(width: 14),
                       Expanded(child: _DriverInfo(driver: driver)),
                       const SizedBox(width: 10),
-                      StatusPill(status: driver.status),
+                      Column(
+                        children: [
+                          StatusPill(status: driver.status),
+                          const SizedBox(height: 2,),
+                          IconButton(
+                            onPressed: () => _showQrDialog(context, driver),
+                            icon: const Icon(Icons.qr_code_2_rounded),
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -63,6 +74,97 @@ class DriverCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showQrDialog(BuildContext context, DriverModel driver) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        title: Text(
+          "Driver QR Code",
+          style: AppTextStyles.batteryTitle,
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(
+                  color: AppColors.border,
+                ),
+              ),
+              child: DriverQrService.buildQrCode(
+                driver,
+                size: 200,
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              driver.name,
+              style: AppTextStyles.batteryTitle,
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 1),
+
+            Text(
+              driver.vehicleNumber,
+              style: AppTextStyles.batteryMeta,
+            ),
+          ],
+        ),
+
+        actions: [
+          TextButton.icon(
+            onPressed: () async {
+              final success =
+              await DriverQrService.downloadQr(driver);
+
+              if (!context.mounted) return;
+              Navigator.pop(context);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success
+                        ? "QR downloaded successfully"
+                        : "Failed to download QR",
+                  ),
+                  backgroundColor: success ? Colors.green : Colors.red,
+                ),
+              );
+            },
+            icon: const Icon(Icons.download),
+            label: Text(
+              "Download",
+              style: AppTextStyles.chipLabel.copyWith(
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Close",
+              style: AppTextStyles.chipLabel.copyWith(
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

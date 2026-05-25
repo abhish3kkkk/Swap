@@ -76,6 +76,7 @@ import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../models/battery_model.dart';
 import '../../service/battery_api_service/battery_api_service.dart';
+import '../../service/qr/battery_qr.dart';
 import '../../widgets/battery_widget/update_battery_dialog.dart';
 
 class BatteryListTab extends StatelessWidget {
@@ -155,23 +156,23 @@ class _BatteryCard extends StatelessWidget {
     required this.onUpdate,
   });
 
-  Color get _healthColor {
-    if (battery.healthPercent >= 80) return AppColors.active;
-    if (battery.healthPercent >= 50) return AppColors.idle;
-    return AppColors.error;
-  }
-
-  Color get _healthBg {
-    if (battery.healthPercent >= 80) return AppColors.activeBg;
-    if (battery.healthPercent >= 50) return AppColors.idleBg;
-    return AppColors.errorBg;
-  }
-
-  Color get _healthText {
-    if (battery.healthPercent >= 80) return AppColors.activeText;
-    if (battery.healthPercent >= 50) return AppColors.idleText;
-    return AppColors.errorText;
-  }
+  // Color get _healthColor {
+  //   if (battery.healthPercent >= 80) return AppColors.active;
+  //   if (battery.healthPercent >= 50) return AppColors.idle;
+  //   return AppColors.error;
+  // }
+  //
+  // Color get _healthBg {
+  //   if (battery.healthPercent >= 80) return AppColors.activeBg;
+  //   if (battery.healthPercent >= 50) return AppColors.idleBg;
+  //   return AppColors.errorBg;
+  // }
+  //
+  // Color get _healthText {
+  //   if (battery.healthPercent >= 80) return AppColors.activeText;
+  //   if (battery.healthPercent >= 50) return AppColors.idleText;
+  //   return AppColors.errorText;
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -227,38 +228,38 @@ class _BatteryCard extends StatelessWidget {
                 ),
 
                 // Health pill
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _healthBg,
-                    borderRadius:
-                    BorderRadius.circular(AppRadius.chip),
-                  ),
-                  child: Text(
-                    "${battery.healthPercent}%",
-                    style: AppTextStyles.statusPill.copyWith(
-                      color: _healthText,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                // Container(
+                //   padding: const EdgeInsets.symmetric(
+                //       horizontal: 10, vertical: 4),
+                //   decoration: BoxDecoration(
+                //     color: _healthBg,
+                //     borderRadius:
+                //     BorderRadius.circular(AppRadius.chip),
+                //   ),
+                //   child: Text(
+                //     "${battery.healthPercent}%",
+                //     style: AppTextStyles.statusPill.copyWith(
+                //       color: _healthText,
+                //       fontWeight: FontWeight.w600,
+                //     ),
+                //   ),
+                // ),
               ],
             ),
 
             const SizedBox(height: 14),
 
             // ── Health bar ───────────────────────────────────────────────
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: battery.healthPercent / 100,
-                minHeight: 5,
-                backgroundColor: AppColors.border,
-                valueColor:
-                AlwaysStoppedAnimation<Color>(_healthColor),
-              ),
-            ),
+            // ClipRRect(
+            //   borderRadius: BorderRadius.circular(4),
+            //   child: LinearProgressIndicator(
+            //     value: battery.healthPercent / 100,
+            //     minHeight: 5,
+            //     backgroundColor: AppColors.border,
+            //     valueColor:
+            //     AlwaysStoppedAnimation<Color>(_healthColor),
+            //   ),
+            // ),
 
             const SizedBox(height: 14),
 
@@ -314,6 +315,15 @@ class _BatteryCard extends StatelessWidget {
                     battery: battery,
                     onUpdate: onUpdate,
                   ),
+                ),
+                const SizedBox(width: 8),
+
+                // QR Code button
+                _ActionButton(
+                  icon: Icons.qr_code_2_rounded,
+                  color: Colors.blueGrey[700]!,
+                  bgColor: Colors.blueGrey[50]!,
+                  onTap: () => _showQrDialog(context, battery),
                 ),
                 const SizedBox(width: 8),
 
@@ -387,6 +397,84 @@ class _BatteryCard extends StatelessWidget {
         onDelete(battery.id);
       }
     }
+  }
+
+  void _showQrDialog(BuildContext context, BatteryModel battery) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        title: Text(
+          "Battery QR Code",
+          style: AppTextStyles.batteryTitle,
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: BatteryQrService.buildQrCode(battery, size: 200),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              battery.serialNumber,
+              style: AppTextStyles.batteryTitle,
+            ),
+            Text(
+              battery.type,
+              style: AppTextStyles.batteryMeta,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () async {
+              final success =
+              await BatteryQrService.downloadQr(battery);
+
+              if (!context.mounted) return;
+              Navigator.pop(context);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success
+                        ? "QR downloaded successfully"
+                        : "Failed to download QR",
+                  ),
+                  backgroundColor: success ? Colors.green : Colors.red,
+                ),
+              );
+            },
+            icon: const Icon(Icons.download),
+            label: Text(
+              "Download",
+              style: AppTextStyles.chipLabel.copyWith(
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Close",
+              style: AppTextStyles.chipLabel.copyWith(
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

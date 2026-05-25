@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../models/driver_model.dart';
 import '../../config/app_urls.dart';
 import '../../config/routes.dart'; // <-- import your theme
 
@@ -89,6 +91,15 @@ class _LoginScreenState extends State<LoginScreen>
           // Optional: print user data
           print(data['data']);
 
+          // Save user data to Shared Preferences
+          // final prefs = await SharedPreferences.getInstance();
+          // await prefs.setBool('isLoggedIn', true);
+          // if (data['data'] != null) {
+          //   // Use DriverModel to validate and serialize data
+          //   final driver = DriverModel.fromJson(data['data']);
+          //   await prefs.setString('userData', jsonEncode(driver.toJson()));
+          // }
+
           // Navigate to dashboard
           Navigator.pushReplacementNamed(
             context,
@@ -124,6 +135,7 @@ class _LoginScreenState extends State<LoginScreen>
           backgroundColor: Colors.red,
         ),
       );
+      print("error: $e");
 
     } finally {
 

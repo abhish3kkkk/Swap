@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../models/driver_model.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AddDriverScreen extends StatefulWidget {
   const AddDriverScreen({super.key});
@@ -11,6 +13,7 @@ class AddDriverScreen extends StatefulWidget {
 
 class _AddDriverScreenState extends State<AddDriverScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool isLoading = false;
 
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
@@ -19,22 +22,94 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
 
   DriverStatus selectedStatus = DriverStatus.offline;
 
-  void submit() {
+  Future<void> submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final driver = DriverModel(
-      id: DateTime.now().millisecondsSinceEpoch,
-      name: nameController.text,
-      phone: phoneController.text,
-      address: addressController.text,
-      vehicleNumber: vehicleController.text,
-      status: selectedStatus,
-    );
+    setState(() {
+      isLoading = true;
+    });
 
-    // TODO: Save to DB / API
-    print(driver.toJson());
+    try {
+      final response = await http.post(
+        Uri.parse(
+          "https://dynamic-futuretech.com/swap_app/apis/addDriver.php",
+        ),
+        body: {
+          "name": nameController.text.trim(),
+          "phone": phoneController.text.trim(),
+          "address": addressController.text.trim(),
+          "vehical_number": vehicleController.text.trim(),
 
-    Navigator.pop(context, driver);
+          // active = 1, idle = 2, offline = 0
+          "status": _mapStatusToInt(selectedStatus).toString(),
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (data["status"] == true) {
+
+        final driver = DriverModel(
+          id: data["driver_id"],
+          name: nameController.text.trim(),
+          phone: phoneController.text.trim(),
+          address: addressController.text.trim(),
+          vehicleNumber: vehicleController.text.trim(),
+          status: selectedStatus,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Driver added successfully"),
+            ),
+          );
+
+          Navigator.pop(context, driver);
+        }
+
+      } else {
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data["message"] ?? "Something went wrong"),
+            ),
+          );
+        }
+      }
+
+    } catch (e) {
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: $e"),
+          ),
+        );
+      }
+
+    } finally {
+
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  int _mapStatusToInt(DriverStatus status) {
+    switch (status) {
+      case DriverStatus.offline:
+        return 0;
+
+      case DriverStatus.active:
+        return 1;
+
+      case DriverStatus.idle:
+        return 2;
+    }
   }
 
   @override
@@ -132,10 +207,21 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                       BorderRadius.circular(AppRadius.button),
                     ),
                     child: Center(
-                      child: Text(
-                        "Add Driver",
-                        style: AppTextStyles.buttonLabel,
+                      child: Center(
+                    child: isLoading
+                    ? const SizedBox(
+                    height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
                       ),
+                    )
+                        : Text(
+                    "Add Driver",
+                    style: AppTextStyles.buttonLabel,
+                  ),
+                ),
                     ),
                   ),
                 ),
